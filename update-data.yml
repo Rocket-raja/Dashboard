@@ -1,0 +1,30 @@
+# Save this as .github/workflows/update-data.yml in your repo
+name: Update market data
+
+on:
+  schedule:
+    # Pre-market: about 6:30 to 9:30 AM IST, every 20 min, Mon-Fri
+    - cron: "*/20 1-3 * * 1-5"
+    # Post-market: about 3:30 to 6:30 PM IST, every 30 min, Mon-Fri
+    - cron: "*/30 10-12 * * 1-5"
+  workflow_dispatch:   # lets you run it by hand from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install yfinance
+      - run: python fetch_data.py
+      - name: Commit data.json
+        run: |
+          git config user.name "market-bot"
+          git config user.email "market-bot@users.noreply.github.com"
+          git add data.json
+          git diff --staged --quiet || (git commit -m "Update market data" && git push)
